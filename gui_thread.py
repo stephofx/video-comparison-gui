@@ -6,7 +6,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 
 from qrangeslider import QRangeSlider
-from VideoFrame import VideoFrame
+from VideoFrame import VideoFrame, DelayWorker
 
 class MainWindow(QMainWindow):
 
@@ -103,7 +103,7 @@ class MainWindow(QMainWindow):
         self.play = QPushButton(self)
         icon = QPixmap(os.path.join(os.path.dirname(__file__), 'icons', 'play.png'))
         self.play.setIcon(QIcon(icon))
-        self.play.clicked.connect(self.timerEvent)
+        self.play.clicked.connect(self.playVideos)
         self.layout.addWidget(self.play, 2, 1, 1, 1)
 
         # GLOBAL PAUSE BUTTON
@@ -141,6 +141,8 @@ class MainWindow(QMainWindow):
         self.delay = 1000
         self.skip = 1
 
+        self.threadpool = QThreadPool()
+
     def fileDialog(self):
         self.img_list, _ = QFileDialog.getOpenFileNames(self,
                                                    'Select one or more files to open',
@@ -151,15 +153,31 @@ class MainWindow(QMainWindow):
         self.endIdx = self.endIdx.size()-1
         self.slider.setRange(0, self.endIdx)
         self.range_slider.setMax(self.endIdx)
-        print(self.endIdx)
 
-    def timerEvent(self, e=None):
+    def playVideos(self):
+        #v1_thread = DelayWorker(self.v1.startIdx, self.v1.endIdx,
+        #                        delay=self.v1.delay, skip=self.v1.skip)
+        #v1_thread.signals.idx.connect(self.v1.showImage)
+        #v2_thread = DelayWorker(self.v2.startIdx, self.v2.endIdx,
+        #                        delay=self.v2.delay, skip=self.v2.skip)
+        #v2_thread.signals.idx.connect(self.v2.showImage)
+        #v3_thread = DelayWorker(self.v3.startIdx, self.v3.endIdx,
+        #                        delay=self.v3.delay, skip=self.v3.skip)
+        #v3_thread.signals.idx.connect(self.v3.showImage)
+        #v4_thread = DelayWorker(self.v4.startIdx, self.v4.endIdx,
+        #                        delay=self.v4.delay, skip=self.v4.skip)
+        #v4_thread.signals.idx.connect(self.v4.showImage)
+        #self.threadpool.start(v1_thread)
+        #self.threadpool.start(v2_thread)
+        #self.threadpool.start(v3_thread)
+        #self.threadpool.start(v4_thread)
+        #self.threadpool.start(v2_thread)
         self.v1.timerEvent()
         self.v2.timerEvent()
         self.v3.timerEvent()
         self.v4.timerEvent()
-        self.slider.setValue(self.idx)
-        self.idx += self.skip
+        #self.slider.setValue(self.idx)
+        #self.idx += self.skip
 
     def showImage(self):
         self.idx = self.slider.value()
