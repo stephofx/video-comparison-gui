@@ -6,6 +6,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 
 from qrangeslider import QRangeSlider
+from backprojection import alpha_beta, lp_projection_calibration, lp_projection
 
 
 class VideoFrame(QWidget):
@@ -80,8 +81,29 @@ class VideoFrame(QWidget):
         self.delay = 1000
         self.skip = 1
 
+        self.calibrate_mode = False
+        self.alpha = None
+        self.beta = None
+        self.t = None
+        self.z = None
+
     def size(self):
         return len(self.img_list)
+
+    def mousePressEvent(self, event):
+        print('Calibration: ' + str(self.calibrate_mode))
+        if self.calibrate_mode is True:
+            c_x, c_y = (event.x(), event.y())
+            self.alpha, self.beta = alpha_beta(c_x, c_y)
+            self.t = lp_projection_calibration(self.alpha, self.beta)
+        elif self.t is not None:
+            c_x, c_y = (event.x(), event.y())
+            self.alpha, self.beta = alpha_beta(c_x, c_y)
+            self.z = lp_projection(self.alpha, self.beta, self.t)
+            print('Height (inches): ' + str(self.z))
+
+    def setCalibrateMode(self):
+        self.calibrate_mode = not self.calibrate_mode
 
     def boundEnd(self):
         self.endIdx = self.range_slider.end()
@@ -102,6 +124,7 @@ class VideoFrame(QWidget):
         self.slider.setRange(0, len(self.img_list)-1)
         self.range_slider.setMax(len(self.img_list)-1)
         pixmap = QPixmap(self.img_list[self.idx]).scaled(600, 800, Qt.KeepAspectRatio, Qt.FastTransformation)
+        #self.pixmap_list = [QPixmap(self.img_list[i]).scaled(600, 800, Qt.KeepAspectRatio, Qt.FastTransformation) for i in range(0, len(self.img_list))]
         self.label.setPixmap(pixmap)
 
     def showImage(self):
@@ -127,8 +150,8 @@ class VideoFrame(QWidget):
             self.idx = self.startIdx
             return
         self.timer.start(self.delay, self)
-        pixmap = QPixmap(self.img_list[self.idx]).scaled(600, 800, Qt.KeepAspectRatio, Qt.FastTransformation)
-        self.label.setPixmap(pixmap)
+        self.showImage(self.idx)
+        #self.label.setPixmap(self.pixmap_list[self.idx])
         self.slider.setValue(self.idx)
         self.idx += self.skip
 
@@ -137,6 +160,7 @@ class VideoFrame(QWidget):
 
     def stopTimer(self):
         self.timer.stop()
+        self.startIdx = self.range_slider.start()
         self.idx = self.startIdx
 
     def fastForward(self):
